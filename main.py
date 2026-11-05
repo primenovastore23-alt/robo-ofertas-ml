@@ -10,6 +10,11 @@ app = Flask(__name__)
 @app.route('/')
 def health_check():
     return "Robô de Ofertas Mercado Livre está rodando com sucesso!", 200
+@app.route('/rodar')
+def rodar_manual():
+    # Chame aqui a sua função de buscar ofertas
+    buscar_e_enviar_ofertas()
+    return "Busca executada com sucesso!"
 
 def rodar_servidor_web():
     port = int(os.environ.get("PORT", 10000))
