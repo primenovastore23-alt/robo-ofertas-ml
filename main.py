@@ -111,3 +111,16 @@ if __name__ == "__main__":
     threading.Thread(target=loop_do_robo, daemon=True).start()
     # Inicia o servidor web na porta exigida pelo Render
     rodar_servidor_web()
+import threading
+
+# Sua função com o loop de 15 minutos
+def loop_busca():
+    while True:
+        try:
+            buscar_e_enviar_ofertas()
+        except Exception as e:
+            print(f"Erro no loop: {e}")
+        time.sleep(900) # 15 minutos
+
+# Inicia a thread em segundo plano
+threading.Thread(target=loop_busca, daemon=True).start()
