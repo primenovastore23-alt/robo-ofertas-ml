@@ -8,14 +8,13 @@ from flask import Flask
 app = Flask(__name__)
 
 # Configurações obtidas das Variáveis de Ambiente no Render
-EVOLUTION_API_URL = os.environ.get("EVOLUTION_API_URL", "").rstrip("/")
-EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY", "")
-ID_GRUPO_WHATSAPP = os.environ.get("ID_GRUPO_WHATSAPP", "")
-NOME_INSTANCIA = os.environ.get("NOME_INSTANCIA", "promo_bot")
+EVOLUTION_API_URL = os.environ.get("EVOLUTION_API_URL", "").strip().rstrip("/")
+EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY", "").strip()
+ID_GRUPO_WHATSAPP = os.environ.get("ID_GRUPO_WHATSAPP", "").strip()
+NOME_INSTANCIA = os.environ.get("NOME_INSTANCIA", "promo_bot").strip()
 
 AFFILIATE_LINK = "https://meli.la/1GyJx4Y"
 
-# Ofertas padrão para garantir disparo caso a API pública do ML bloqueie por IP
 OFERTAS_BACKUP = [
     {"title": "Smartphone Samsung Galaxy S23 5G 256GB", "price": 2899.00, "original_price": 4499.00},
     {"title": "Smartphone Motorola Edge 40 Neo 256GB", "price": 1699.00, "original_price": 2799.00},
@@ -31,8 +30,7 @@ def buscar_e_enviar_ofertas():
     
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+        'Accept': 'application/json'
     }
     
     try:
@@ -42,7 +40,7 @@ def buscar_e_enviar_ofertas():
             results = data.get("results", [])
             print(f"📦 [ROBÔ] Total de produtos da API: {len(results)}")
     except Exception as e:
-        print(f"⚠️ [ROBÔ] API bloqueou ou falhou ({e}). Usando lista de ofertas selecionadas!")
+        print(f"⚠️ [ROBÔ] API bloqueou ({e}). Usando lista de ofertas selecionadas!")
         results = OFERTAS_BACKUP
 
     for item in results[:5]:
@@ -65,7 +63,9 @@ def buscar_e_enviar_ofertas():
         
         print(f"🚀 [ROBÔ] Enviando oferta para o WhatsApp: {titulo[:30]}...")
         
+        # Constrói o endpoint limpo garantindo a rota /message/sendText/{instancia}
         endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
+        
         payload = json.dumps({
             "number": ID_GRUPO_WHATSAPP,
             "text": mensagem
@@ -84,9 +84,9 @@ def buscar_e_enviar_ofertas():
         try:
             with urllib.request.urlopen(req_api, timeout=15) as res_api:
                 res_body = res_api.read().decode('utf-8')
-                print(f"📡 [ROBÔ] Resposta da Evolution API ({res_api.status}): {res_body}")
+                print(f"📡 [ROBÔ] Sucesso! Resposta da Evolution API ({res_api.status}): {res_body}")
         except Exception as err_api:
-            print(f"❌ [ROBÔ] Erro ao enviar para Evolution API: {err_api}")
+            print(f"❌ [ROBÔ] Erro ao enviar para Evolution API (URL tentada: {endpoint}): {err_api}")
         
         time.sleep(5)
 
@@ -99,7 +99,6 @@ def loop_automatico():
             print(f"❌ [ROBÔ] Erro no loop: {e}")
         time.sleep(900)
 
-# Inicia a Thread em segundo plano
 threading.Thread(target=loop_automatico, daemon=True).start()
 
 @app.route("/")
