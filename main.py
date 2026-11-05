@@ -12,81 +12,78 @@ EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY", "")
 ID_GRUPO_WHATSAPP = os.environ.get("ID_GRUPO_WHATSAPP", "")
 NOME_INSTANCIA = os.environ.get("NOME_INSTANCIA", "promo_bot")
 
-TERMO_BUSCA = "smartphone"
+TERMO_BUSCA = "celular"
 AFFILIATE_LINK = "https://meli.la/1GyJx4Y"
 
 def buscar_e_enviar_ofertas():
     print("🔎 [ROBÔ] Iniciando busca por ofertas no Mercado Livre...")
     
-    # URL oficial de pesquisa do Mercado Livre Brasil
-    url_ml = "https://api.mercadolibre.com/sites/MLB/search"
-    params = {
-        "q": "smartphone",
-        "limit": 10
-    }
+    # URL direta formatada para evitar problemas de parâmetros
+    url_ml = f"https://api.mercadolibre.com/sites/MLB/search?q={TERMO_BUSCA}&limit=10"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
     }
     
     try:
-        response = requests.get(url_ml, params=params, headers=headers, timeout=10)
+        response = requests.get(url_ml, headers=headers, timeout=10)
         data = response.json()
         results = data.get("results", [])
         
         print(f"📦 [ROBÔ] Total de produtos encontrados: {len(results)}")
         
         if not results:
-            print("⚠️ [ROBÔ] Nenhum produto retornado na busca. Verifique a chave ou o termo.")
+            print("⚠️ [ROBÔ] Nenhum produto retornado na busca do Mercado Livre.")
             return
 
         for item in results[:5]:
             preco_atual = item.get("price", 0)
-            preco_original = item.get("original_price") or (preco_atual * 1.25)
-            titulo = item.get("title", "Produto sem título")
+            preco_original = item.get("original_price")
             
-            if preco_original > preco_atual:
-                desconto = int(((preco_original - preco_atual) / preco_original) * 100)
-                
-                mensagem = (
-                    f"🔥 *OFERTA IMPERDÍVEL!*\n\n"
-                    f"📱 *{titulo}*\n"
-                    f"❌ De: R$ {preco_original:,.2f}\n"
-                    f"✅ *Por: R$ {preco_atual:,.2f}* ({desconto}% OFF)\n\n"
-                    f"🛒 *Compre aqui:* {AFFILIATE_LINK}"
-                )
-                
-                print(f"🚀 [ROBÔ] Enviando oferta para o WhatsApp: {titulo[:30]}...")
-                
-                endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
-                headers_api = {
-                    "apikey": EVOLUTION_API_KEY,
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "number": ID_GRUPO_WHATSAPP,
-                    "text": mensagem
-                }
-                
-                res = requests.post(endpoint, json=payload, headers=headers_api, timeout=15)
-                print(f"📡 [ROBÔ] Resposta da Evolution API ({res.status_code}): {res.text}")
-                
-                time.sleep(5)
-                
+            # Se a API não informar preço anterior, projeta um valor fictício para simular o desconto de teste
+            if not preco_original or preco_original <= preco_atual:
+                preco_original = preco_atual * 1.20
+
+            titulo = item.get("title", "Produto sem título")
+            desconto = int(((preco_original - preco_atual) / preco_original) * 100)
+            
+            mensagem = (
+                f"🔥 *OFERTA IMPERDÍVEL!*\n\n"
+                f"📱 *{titulo}*\n"
+                f"❌ De: R$ {preco_original:,.2f}\n"
+                f"✅ *Por: R$ {preco_atual:,.2f}* ({desconto}% OFF)\n\n"
+                f"🛒 *Compre aqui:* {AFFILIATE_LINK}"
+            )
+            
+            print(f"🚀 [ROBÔ] Enviando oferta para o WhatsApp: {titulo[:30]}...")
+            
+            endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
+            headers_api = {
+                "apikey": EVOLUTION_API_KEY,
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "number": ID_GRUPO_WHATSAPP,
+                "text": mensagem
+            }
+            
+            res = requests.post(endpoint, json=payload, headers=headers_api, timeout=15)
+            print(f"📡 [ROBÔ] Resposta da Evolution API ({res.status_code}): {res.text}")
+            
+            time.sleep(5)
+            
     except Exception as e:
         print(f"❌ [ROBÔ] Erro durante a execução: {e}")
 
 def loop_automatico():
-    # Aguarda 10 segundos após o servidor ligar para fazer o primeiro disparo
     time.sleep(10)
     while True:
         try:
             buscar_e_enviar_ofertas()
         except Exception as e:
             print(f"❌ [ROBÔ] Erro no loop: {e}")
-        # Roda novamente a cada 15 minutos (900 segundos)
-        time.sleep(900)
+        time.sleep(900)  # Roda a cada 15 minutos
 
-# Inicia a Thread em segundo plano para o robô rodar sozinho
+# Inicia a Thread em segundo plano
 threading.Thread(target=loop_automatico, daemon=True).start()
 
 @app.route("/")
