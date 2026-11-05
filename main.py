@@ -22,7 +22,7 @@ EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY")
 ID_GRUPO_WHATSAPP = os.getenv("ID_GRUPO_WHATSAPP")
 INSTANCIA_WHATSAPP = "promo_bot"
 
-TERMO_BUSCA = "oferta do dia"
+TERMO_BUSCA = "smartphone"
 produtos_postados = set()
 
 def buscar_promocoes_ml(query):
