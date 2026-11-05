@@ -22,11 +22,14 @@ OFERTAS_BACKUP = [
     {"title": "Smartphone Apple iPhone 13 128GB", "price": 3699.00, "original_price": 5499.00}
 ]
 
-def formatar_destino(id_grupo):
-    """Garante a formatação correta para a Evolution API v2."""
-    if "@g.us" not in id_grupo and "@c.us" not in id_grupo:
-        return f"{id_grupo}@g.us"
-    return id_grupo
+def formatar_numero(destino):
+    """Limpa e formata o destino para numero individual ou grupo."""
+    destino_limpo = destino.replace("@g.us", "").replace("@c.us", "").strip()
+    # Se for um ID de grupo longo (mais de 15 dígitos)
+    if len(destino_limpo) > 15:
+        return f"{destino_limpo}@g.us"
+    # Se for numero individual
+    return destino_limpo
 
 def buscar_e_enviar_ofertas():
     print("🔎 [ROBÔ] Iniciando busca por ofertas no Mercado Livre...")
@@ -49,6 +52,8 @@ def buscar_e_enviar_ofertas():
         print(f"⚠️ [ROBÔ] API bloqueou ({e}). Usando lista de ofertas selecionadas!")
         results = OFERTAS_BACKUP
 
+    destinatario = formatar_numero(ID_GRUPO_WHATSAPP)
+
     for item in results[:5]:
         preco_atual = item.get("price", 0)
         preco_original = item.get("original_price")
@@ -67,18 +72,13 @@ def buscar_e_enviar_ofertas():
             f"🛒 *Compre aqui:* {AFFILIATE_LINK}"
         )
         
-        print(f"🚀 [ROBÔ] Enviando oferta para o WhatsApp: {titulo[:30]}...")
+        print(f"🚀 [ROBÔ] Enviando oferta para {destinatario}: {titulo[:30]}...")
         
         endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
         
-        destinatario = formatar_destino(ID_GRUPO_WHATSAPP)
-        
-        # Payload padronizado para a Evolution API v2 (suporta grupos e números individuais)
         payload_dict = {
             "number": destinatario,
-            "text": mensagem,
-            "delay": 1200,
-            "linkPreview": True
+            "text": mensagem
         }
         
         payload = json.dumps(payload_dict).encode('utf-8')
@@ -121,7 +121,7 @@ def home():
 def rodar_manual():
     print("⚡ [ROBÔ] Disparo manual acionado via rota /rodar!")
     threading.Thread(target=buscar_e_enviar_ofertas).start()
-    return "Busca e envio iniciados com sucesso! Verifique os logs do Render e o seu grupo do WhatsApp."
+    return "Busca e envio iniciados com sucesso! Verifique os logs do Render e o seu WhatsApp."
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
