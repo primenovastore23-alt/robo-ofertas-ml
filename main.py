@@ -22,6 +22,12 @@ OFERTAS_BACKUP = [
     {"title": "Smartphone Apple iPhone 13 128GB", "price": 3699.00, "original_price": 5499.00}
 ]
 
+def formatar_destino(id_grupo):
+    """Garante a formatação correta para a Evolution API v2."""
+    if "@g.us" not in id_grupo and "@c.us" not in id_grupo:
+        return f"{id_grupo}@g.us"
+    return id_grupo
+
 def buscar_e_enviar_ofertas():
     print("🔎 [ROBÔ] Iniciando busca por ofertas no Mercado Livre...")
     
@@ -65,10 +71,14 @@ def buscar_e_enviar_ofertas():
         
         endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
         
-        # Payload nativo da Evolution API v2 para envio em grupos
+        destinatario = formatar_destino(ID_GRUPO_WHATSAPP)
+        
+        # Payload padronizado para a Evolution API v2 (suporta grupos e números individuais)
         payload_dict = {
-            "number": ID_GRUPO_WHATSAPP,
-            "text": mensagem
+            "number": destinatario,
+            "text": mensagem,
+            "delay": 1200,
+            "linkPreview": True
         }
         
         payload = json.dumps(payload_dict).encode('utf-8')
