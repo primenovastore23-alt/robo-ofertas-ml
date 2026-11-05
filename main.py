@@ -18,24 +18,33 @@ AFFILIATE_LINK = "https://meli.la/1GyJx4Y"
 def buscar_e_enviar_ofertas():
     print("🔎 [ROBÔ] Iniciando busca por ofertas no Mercado Livre...")
     
-    url_ml = f"https://api.mercadolibre.com/sites/MLB/search?q={TERMO_BUSCA}"
+    # URL oficial de pesquisa do Mercado Livre Brasil
+    url_ml = "https://api.mercadolibre.com/sites/MLB/search"
+    params = {
+        "q": "smartphone",
+        "limit": 10
+    }
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+    
     try:
-        response = requests.get(url_ml, timeout=10)
+        response = requests.get(url_ml, params=params, headers=headers, timeout=10)
         data = response.json()
         results = data.get("results", [])
         
         print(f"📦 [ROBÔ] Total de produtos encontrados: {len(results)}")
         
-        for item in results[:5]:  # Analisa os 5 primeiros produtos
-            preco_atual = item.get("price")
-            preco_original = item.get("original_price")
-            titulo = item.get("title")
+        if not results:
+            print("⚠️ [ROBÔ] Nenhum produto retornado na busca. Verifique a chave ou o termo.")
+            return
+
+        for item in results[:5]:
+            preco_atual = item.get("price", 0)
+            preco_original = item.get("original_price") or (preco_atual * 1.25)
+            titulo = item.get("title", "Produto sem título")
             
-            # Se não houver preco_original cadastrado na API, usa o preço atual para simular o teste
-            if not preco_original:
-                preco_original = preco_atual * 1.2
-            
-            if preco_original and preco_original > preco_atual:
+            if preco_original > preco_atual:
                 desconto = int(((preco_original - preco_atual) / preco_original) * 100)
                 
                 mensagem = (
@@ -46,10 +55,10 @@ def buscar_e_enviar_ofertas():
                     f"🛒 *Compre aqui:* {AFFILIATE_LINK}"
                 )
                 
-                print(f"🚀 [ROBÔ] Enviando oferta para a Evolution API: {titulo[:30]}...")
+                print(f"🚀 [ROBÔ] Enviando oferta para o WhatsApp: {titulo[:30]}...")
                 
                 endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
-                headers = {
+                headers_api = {
                     "apikey": EVOLUTION_API_KEY,
                     "Content-Type": "application/json"
                 }
@@ -58,10 +67,9 @@ def buscar_e_enviar_ofertas():
                     "text": mensagem
                 }
                 
-                res = requests.post(endpoint, json=payload, headers=headers, timeout=15)
-                print(f"📡 [ROBÔ] Resposta da API ({res.status_code}): {res.text}")
+                res = requests.post(endpoint, json=payload, headers=headers_api, timeout=15)
+                print(f"📡 [ROBÔ] Resposta da Evolution API ({res.status_code}): {res.text}")
                 
-                # Aguarda 5 segundos entre cada envio para não sobrecarregar
                 time.sleep(5)
                 
     except Exception as e:
