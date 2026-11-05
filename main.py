@@ -13,7 +13,7 @@ EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY", "").strip()
 ID_GRUPO_WHATSAPP = os.environ.get("ID_GRUPO_WHATSAPP", "").strip()
 NOME_INSTANCIA = os.environ.get("NOME_INSTANCIA", "promo_bot").strip()
 
-AFFILIATE_LINK = "https://meli.la/1GyJx4Y"
+AFFILIATE_LINK = os.environ.get("MEU_LINK_AFILIADO", "https://meli.la/1GyJx4Y").strip()
 
 OFERTAS_BACKUP = [
     {"title": "Smartphone Samsung Galaxy S23 5G 256GB", "price": 2899.00, "original_price": 4499.00},
@@ -63,12 +63,16 @@ def buscar_e_enviar_ofertas():
         
         print(f"🚀 [ROBÔ] Enviando oferta para o WhatsApp: {titulo[:30]}...")
         
-        # Constrói o endpoint limpo garantindo a rota /message/sendText/{instancia}
         endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
         
+        # Payload compatível com todas as versões da Evolution API v1 e v2
         payload = json.dumps({
             "number": ID_GRUPO_WHATSAPP,
-            "text": mensagem
+            "remoteJid": ID_GRUPO_WHATSAPP,
+            "text": mensagem,
+            "textMessage": {
+                "text": mensagem
+            }
         }).encode('utf-8')
         
         req_api = urllib.request.Request(
