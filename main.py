@@ -65,15 +65,13 @@ def buscar_e_enviar_ofertas():
         
         endpoint = f"{EVOLUTION_API_URL}/message/sendText/{NOME_INSTANCIA}"
         
-        # Payload compatível com todas as versões da Evolution API v1 e v2
-        payload = json.dumps({
+        # Payload nativo da Evolution API v2 para envio em grupos
+        payload_dict = {
             "number": ID_GRUPO_WHATSAPP,
-            "remoteJid": ID_GRUPO_WHATSAPP,
-            "text": mensagem,
-            "textMessage": {
-                "text": mensagem
-            }
-        }).encode('utf-8')
+            "text": mensagem
+        }
+        
+        payload = json.dumps(payload_dict).encode('utf-8')
         
         req_api = urllib.request.Request(
             endpoint,
